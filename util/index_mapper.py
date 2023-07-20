@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 import os
 
@@ -153,16 +154,60 @@ def get_data_preprocessor(dataset_info, dim=3, num_of_frames=2, hidden_parts=Fal
     return __data_entry_preprocessor
 
 
-def get_array_mapper(in_data, frames_per_vid, dim=3, num_of_frames=2, expected_out_data=None):
-    in_data = tf.constant(in_data)
-    expected_out_data = tf.constant(expected_out_data) if expected_out_data else in_data
+class IndexArrayMapper():
+    def __init__(self, data, frames_per_vid, number_of_frames=2, hidden_data=None):
+        self.data = data
+        self.frames_per_vid = frames_per_vid
+        self.output_data = hidden_data if hidden_data else self.data
+        self.num_of_frames = number_of_frames
 
-    def mapper(indices):
-        array_index = frames_per_vid * indices[0] + indices[1]
-        return (in_data[array_index: array_index + num_of_frames],
-                expected_out_data[array_index + 1: array_index + num_of_frames + 1])
+    def index_array_mapper_3d(self, indices):
+        array_index = self.frames_per_vid * indices[0] + indices[1]
+        return (self.data[array_index: array_index + self.num_of_frames],
+                self.output_data[array_index + 1: array_index + self.num_of_frames + 1])
 
-    return mapper
+    def index_array_mapper_2d(self, indices):
+        array_index = self.frames_per_vid * indices[0] + indices[1]
+        return (tf.concat([self.data[i] for i in range(array_index, array_index + self.num_of_frames)]),
+                tf.concat(
+                    [self.output_data[i] for i in range(array_index + 1, array_index + self.num_of_frames + 1)]))
+
+    def latent_array_mapper(self, indices):
+        x = self.data[indices[0] * self.frames_per_vid + indices[1]]
+        return x, x
+
+    def get_latent_index_array_mapper(self):
+        return lambda i: tf.py_function(
+            func=self.latent_array_mapper,
+            inp=[i],
+            Tout=[tf.float32, tf.float32])
+
+    def get_index_array_mapper(self, dim=3):
+        if dim == 3:
+            return lambda i: tf.py_function(
+                func=self.latent_array_mapper,
+                inp=[i],
+                Tout=[tf.float32, tf.float32])
+        else:
+            return lambda i: tf.py_function(
+                func=self.latent_array_mapper,
+                inp=[i],
+                Tout=[tf.float32, tf.float32])
+
+
+def get_array_mapper(data, frames_per_vid, number_of_frames=2, hidden_data=None, dim=3):
+    mapper_obj = IndexArrayMapper(data, frames_per_vid, number_of_frames=2, hidden_data=None)
+    return mapper_obj.get_index_array_mapper(dim=dim)
+
+
+def get_latent_array_mapper(data, frames_per_vid):
+    mapper_obj = IndexArrayMapper(data, frames_per_vid)
+    return mapper_obj.get_latent_index_array_mapper()
+
+
+def get_latent_memmap(dataset_info, filename, shape=(2, 1, 1, 64)):
+    path = os.path.join(dataset_info.get_latent_path(), filename)
+    return np.memmap(path, shape=shape, dtype='float32', mode='r')
 
 
 def get_preprocessed_video_frames(dataset_info):
@@ -171,9 +216,46 @@ def get_preprocessed_video_frames(dataset_info):
     return __get_normalized_images(image_paths)
 
 
+def preprocess_specific_images(dataset_info, hidden_parts=False):
+    path = str(dataset_info.get_path())
+
+    def __data_entry_preprocessor(indices):
+        """
+        loads and preprocesses adjacent frames.
+        Appends frames vertically so that 2D-convolution can be used.
+
+        Parameters
+        ----------
+        dir_index : Tensor
+            directory index of the frame files.
+        file_index : Tensor
+            index of the first frame.
+
+        Returns
+        -------
+        x0 : tf.Tensor
+            input for 2D convolutional dynamics prediction autoencoder.
+        x1 : tf.Tensor
+            expected output corresponding to input.
+
+        """
+
+        image_paths = tf.py_function(func=__get_adjacent_frame_paths,
+                                     inp=[indices, 1, path],
+                                     Tout=tf.string)
+        return __get_normalized_images(image_paths)
+
+    return __data_entry_preprocessor
+
+
 if __name__ == '__main__':
     from dataset_info import DatasetInfo
+    from images_to_arrays_util import images_to_arrays
 
-    prep = get_data_preprocessor(DatasetInfo.read_from_file("double_pendulum"), )
-    for i, j in zip(range(5), range(5)):
-        print(prep((i, j))[0].shape)
+    dataset_info = DatasetInfo.read_from_file("double_pendulum")
+
+    prep = get_latent_memmap(dataset_info, "points", (dataset_info.get_data_tuples(), 2, 1, 1, 64))
+    for i in range(100):
+        for j in range(58):
+            print(prep((i, j)))
+    # print(images_to_arrays(prep, list(range(dataset_info.num_of_vids)[:50]), dataset_info.frames_per_vid)[:5])

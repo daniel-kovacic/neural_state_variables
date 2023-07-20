@@ -8,11 +8,15 @@ import math
 class DatasetInfo:
     DATA_INFO_DIR_PATH = "../data_info"
     DATA_DIR_PATH = "../data"
+    LATENT_DATA_DIR_PATH = "../latent_data"
 
-    def __init__(self, dataset_name, frames_per_vid, num_of_vids, train_ind=None, val_ind=None, test_ind=None):
+    def __init__(self, dataset_name, frames_per_vid, num_of_vids, train_ind=None, val_ind=None, test_ind=None,
+        model_specific_info=None):
+
         self.dataset_name = dataset_name
         self.frames_per_vid = frames_per_vid
         self.num_of_vids = num_of_vids
+        self.model_specific_info = model_specific_info
 
         self.train_ind = train_ind
         self.val_ind = val_ind
@@ -21,6 +25,9 @@ class DatasetInfo:
     def get_path(self, hidden=False):
         return os.path.join(DatasetInfo.DATA_DIR_PATH,
                             self.dataset_name if not hidden else self.dataset_name + "_hidden")
+
+    def get_latent_path(self):
+        return os.path.join(DatasetInfo.LATENT_DATA_DIR_PATH, self.dataset_name)
 
     @staticmethod
     def read_from_file(dataset_name):
@@ -98,6 +105,17 @@ class DatasetInfo:
         test_ind = dataset_indices[test_index:]
 
         return train_ind, val_ind, test_ind
+
+    def reduce_training_data(self, number_of_points, number_of_frames=2):
+        self.frames_per_vid = (number_of_points // len(self.train_ind) + number_of_frames + 1)
+        number_of_training_folders = (number_of_points // (self.frames_per_vid - number_of_frames + 1))
+        self.train_ind = self.train_ind[:number_of_training_folders]
+
+    def get_data_tuples_per_vid(self, number_of_frames=2):
+        return self.frames_per_vid - number_of_frames
+
+    def get_data_tuples(self, number_of_frames=2):
+        return self.num_of_vids*self.get_data_tuples_per_vid(number_of_frames)
 
 
 if __name__ == "__main__":
