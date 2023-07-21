@@ -11,7 +11,7 @@ from dataset_util import DatasetUtil
 
 
 def create_latent_space_array(dataset_info, number_of_frames=2, encoding_shape=(2, 1, 1, 64), filename="points",
-                              memmap=True):
+                              memmap=True, is_neural=False):
     shape = (dataset_info.get_data_tuples(number_of_frames), *encoding_shape)
 
     if memmap:
@@ -29,8 +29,8 @@ def create_latent_space_array(dataset_info, number_of_frames=2, encoding_shape=(
         return np.zeros(shape)
 
 
-def create_latent_space_predictions(dataset_info, dataset, autoencoder, number_of_frames=2,
-                                    encoding_shape=(2, 1, 1, 64), filename="points", memmap=True):
+def create_encodings(dataset_info, dataset, autoencoder, number_of_frames=2, encoding_shape=(2, 1, 1, 64),
+                     filename="points", memmap=True, is_neural=False):
     """
     uses DatasetUtil instance and provided autoencoder to store
     latent space encodings as np.memmap
@@ -48,7 +48,7 @@ def create_latent_space_predictions(dataset_info, dataset, autoencoder, number_o
         The default is 3.
     encoding_shape : tuple, optional
         latent space dimension of the used autoencoder.
-        The default is (2,4,4,128).
+        The default is (2,1,1,64).
     filename : str, optional
         name of the encoded np.memmap file. The default is "points".
 
@@ -60,7 +60,8 @@ def create_latent_space_predictions(dataset_info, dataset, autoencoder, number_o
     """
 
     empty_data_array = create_latent_space_array(dataset_info, number_of_frames=number_of_frames,
-                                                 encoding_shape=encoding_shape, filename=filename, memmap=memmap)
+                                                 encoding_shape=encoding_shape, filename=filename,
+                                                 memmap=memmap, is_neural=is_neural)
 
     # extract encoder part of autoencoder
     encoder = autoencoder.layers[0]
@@ -69,8 +70,7 @@ def create_latent_space_predictions(dataset_info, dataset, autoencoder, number_o
     # create all predictions folder by folder and append to np.memmap
     for i, data in enumerate(dataset):
         predictions = encoder.predict(data[0])
-        empty_data_array[i * data_tuples_per_vid:
-                         (i + 1) * data_tuples_per_vid] = predictions[:]
+        empty_data_array[i * data_tuples_per_vid:(i + 1) * data_tuples_per_vid] = predictions[:]
 
 
 if __name__ == "__main__":
@@ -78,12 +78,11 @@ if __name__ == "__main__":
     from dataset_util import DatasetUtil
     import tensorflow as tf
     from index_mapper import get_data_preprocessor
-    """
     dataset_info = DatasetInfo.read_from_file("double_pendulum")
     dataset_util = DatasetUtil(dataset_info)
     dataset = dataset_util.get_dataset(index_mapper=get_data_preprocessor(dataset_info), mode="all",data_tuples_per_vid=dataset_info.get_data_tuples_per_vid(2),
                                        batch_size=dataset_info.get_data_tuples_per_vid(2), sequential=True)
     autoencoder = tf.keras.models.load_model(
         r"C:\Users\kovac\PycharmProjects\neural_state_variables\models\double_pendulum_dyn_pred_3d_2frames")
-    """
+    
     create_latent_space_predictions(dataset_info, dataset, autoencoder, encoding_shape=(2, 1, 1, 64))

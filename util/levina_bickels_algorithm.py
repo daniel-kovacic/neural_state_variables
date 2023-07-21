@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Apr 18 15:50:27 2023
-
-@author: kovac
-"""
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 

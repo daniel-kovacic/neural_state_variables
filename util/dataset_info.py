@@ -9,6 +9,7 @@ class DatasetInfo:
     DATA_INFO_DIR_PATH = "../data_info"
     DATA_DIR_PATH = "../data"
     LATENT_DATA_DIR_PATH = "../latent_data"
+    NEURAL_DATA_PATH = "../neural_data"
 
     def __init__(self, dataset_name, frames_per_vid, num_of_vids, train_ind=None, val_ind=None, test_ind=None,
         model_specific_info=None):
@@ -28,6 +29,9 @@ class DatasetInfo:
 
     def get_latent_path(self):
         return os.path.join(DatasetInfo.LATENT_DATA_DIR_PATH, self.dataset_name)
+
+    def get_neural_path(self):
+        return os.path.join(DatasetInfo.NEURAL_DATA_DIR_PATH, self.dataset_name)
 
     @staticmethod
     def read_from_file(dataset_name):
@@ -116,7 +120,6 @@ class DatasetInfo:
 
     def get_data_tuples(self, number_of_frames=2):
         return self.num_of_vids*self.get_data_tuples_per_vid(number_of_frames)
-
 
 if __name__ == "__main__":
     data_info = DatasetInfo("double_pendulum", 60, 1100)
