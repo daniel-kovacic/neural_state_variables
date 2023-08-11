@@ -18,7 +18,7 @@ def predict_longterm(input_frames, pred_autoencoder, number_of_steps=20, dim=3):
     Parameters
     ----------
     input_frames : tf.Tensor
-        inpit frames as needed for the dynamics prediction autoencoder.
+        input frames as needed for the dynamics prediction autoencoder.
     pred_autoencoder : tf.Model
         dynamics prediciton autoencoder used fo long term prediction.
     number_of_steps : int, optional
@@ -36,17 +36,19 @@ def predict_longterm(input_frames, pred_autoencoder, number_of_steps=20, dim=3):
     result = []
 
     if dim == 3:
+        input_frames = tf.concat(input_frames, 0)
         for _ in range(number_of_steps):
             input_frames = tf.concat(
                 [input_frames[1:], pred_autoencoder.predict(tf.expand_dims(input_frames, axis=0))[0, -1:]], 0)
+
             result = result + [input_frames[-1]]
     else:
+        input_frames = tf.concat([frame[0] for frame in input_frames], 0)
         width = 128
         for _ in range(number_of_steps):
             input_frames = tf.concat(
                 [input_frames[width:], pred_autoencoder.predict(tf.expand_dims(input_frames, axis=0))[0, -width:]], 0)
             result = result + [input_frames[-width:]]
-
     return result
 
 
@@ -85,12 +87,14 @@ def predict_longterm_latent_supported(input_frames, pred_autoencoder, latent_aut
         list of all predictions.
 
     """
+    if dim != 3:
+        input_frames = tf.concat([frame[0] for frame in input_frames], 0)
 
     result = []
     pred_encoder = pred_autoencoder.layers[0]
     pred_decoder = pred_autoencoder.layers[1]
     width = 128
-
+    input_frames = tf.concat(input_frames, 0)
     for i in range(number_of_steps):
         if i % latent_steps == 0:
             latent_pred = pred_encoder.predict(tf.expand_dims(input_frames, axis=0))
@@ -100,8 +104,8 @@ def predict_longterm_latent_supported(input_frames, pred_autoencoder, latent_aut
         else:
             pred = pred_autoencoder.predict(tf.expand_dims(input_frames, axis=0))[0, -1 if dim == 3 else -width:]
 
-        input_frames = tf.concat([input_frames[1:], pred], 0)
-        result = result + [input_frames[-1]] if dim==3 else [input_frames[-width:]]
+        input_frames = tf.concat([input_frames[1 if dim==3 else width:], pred], 0)
+        result = result + [input_frames[-1]] if dim == 3 else [input_frames[-width:]]
     return result
 
 
@@ -110,12 +114,12 @@ def get_abs_difference(predictions, expected):
 
 
 def get_frames_from_single_vid(mapper, video_index, num_frames_per_vid):
-    [mapper(video_index, j) for j in range(num_frames_per_vid)]
+    return [mapper((video_index, j)) for j in range(num_frames_per_vid)]
 
 
 def store_video_frames(video_frames, path):
     for i, frame in enumerate(video_frames):
-        tf.keras.preprocessing.array_to_img(frame * 255, scale=False).save(os.path.join(path, f"{i}.png"))
+        tf.keras.utils.array_to_img(frame * 255, scale=False).save(os.path.join(path, f"{i}.png"))
 
 
 def combine_frames_to_video(dir_path, video_path):
@@ -136,13 +140,13 @@ def combine_frames_to_video(dir_path, video_path):
     None.
 
     """
-
     frames = [frame for frame in os.listdir(dir_path)]
     frames.sort(key=lambda f: int(f[: f.rfind(".")]))
-    frames = [os.path.join(dir_path, frame) for frame in os.listdir(dir_path)]
 
+    frames = [os.path.join(dir_path, frame) for frame in frames]
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     height, width, layers = cv2.imread(frames[0]).shape
-    video_creator = cv2.VideoWriter(video_path, 0, 5, (width, height))
+    video_creator = cv2.VideoWriter(f"{video_path}.mp4", fourcc, 5, (width, height))
 
     for frame in frames:
         video_creator.write(cv2.imread(frame))

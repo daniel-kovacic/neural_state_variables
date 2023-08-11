@@ -3,8 +3,12 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
 
-def levina_bickels_alg(points, neighbors_lower_bound=15,
-                       neighbors_upper_bound=25):
+def reshape_array_for_levina_bickels_alg(array, dataset_info):
+    return array.reshape((dataset_info.num_of_vids*dataset_info.get_data_tuples_per_vid(),
+                          np.prod(dataset_info.get_latent_enc_shape())))
+
+
+def levina_bickels_alg(points, neighbors_lower_bound=15,neighbors_upper_bound=25):
     """
     levina-Bickel's algorithm implementation.An average over different
     choices for the number of neighbors is used. The performance effect

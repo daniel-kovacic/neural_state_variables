@@ -1,6 +1,7 @@
 class ModelSpecificInfo:
-    def __int__(self, number_of_frames=2, latent_dim_shape=(2, 1, 1, 64), dim=3, latent_filename="points"):
-        self.number_of_frames = number_of_frames
-        self.latent_dim_shape = latent_dim_shape
+    def __init__(self, num_of_frames, latent_enc_shape, dim):
+        self.num_of_frames = num_of_frames
+        self.latent_enc_shape = latent_enc_shape
         self.dim = dim
-        self.latent_filename = latent_filename
+        self.neural_state_dim = None
+

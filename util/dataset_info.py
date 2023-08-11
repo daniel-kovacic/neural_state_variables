@@ -3,16 +3,18 @@ import json
 import numpy as np
 import random
 import math
+from util.model_specific_info import ModelSpecificInfo
 
 
 class DatasetInfo:
     DATA_INFO_DIR_PATH = "../data_info"
     DATA_DIR_PATH = "../data"
     LATENT_DATA_DIR_PATH = "../latent_data"
-    NEURAL_DATA_PATH = "../neural_data"
+    NEURAL_DATA_DIR_PATH = "../neural_data"
+    MEMMAP_DATA_DIR_PATH = "../memmap_data"
 
     def __init__(self, dataset_name, frames_per_vid, num_of_vids, train_ind=None, val_ind=None, test_ind=None,
-        model_specific_info=None):
+                 model_specific_info=None):
 
         self.dataset_name = dataset_name
         self.frames_per_vid = frames_per_vid
@@ -23,15 +25,26 @@ class DatasetInfo:
         self.val_ind = val_ind
         self.test_ind = test_ind
 
-    def get_path(self, hidden=False):
+    def get_path(self, hidden=False, general_dir_path=False):
+        if general_dir_path:
+            return DatasetInfo.DATA_DIR_PATH
         return os.path.join(DatasetInfo.DATA_DIR_PATH,
                             self.dataset_name if not hidden else self.dataset_name + "_hidden")
 
-    def get_latent_path(self):
+    def get_latent_path(self, general_dir_path=False):
+        if general_dir_path:
+            return DatasetInfo.LATENT_DATA_DIR_PATH
         return os.path.join(DatasetInfo.LATENT_DATA_DIR_PATH, self.dataset_name)
 
-    def get_neural_path(self):
+    def get_neural_path(self, general_dir_path=False):
+        if general_dir_path:
+            return DatasetInfo.NEURAL_DATA_DIR_PATH
         return os.path.join(DatasetInfo.NEURAL_DATA_DIR_PATH, self.dataset_name)
+
+    def get_memmap_path(self, general_dir_path=False, hidden=False):
+        if general_dir_path:
+            return DatasetInfo.MEMMAP_DATA_DIR_PATH
+        return os.path.join(DatasetInfo.MEMMAP_DATA_DIR_PATH, self.dataset_name + ("_hidden" if hidden else ""))
 
     @staticmethod
     def read_from_file(dataset_name):
@@ -115,13 +128,48 @@ class DatasetInfo:
         number_of_training_folders = (number_of_points // (self.frames_per_vid - number_of_frames + 1))
         self.train_ind = self.train_ind[:number_of_training_folders]
 
-    def get_data_tuples_per_vid(self, number_of_frames=2):
-        return self.frames_per_vid - number_of_frames
+    def get_data_tuples_per_vid(self):
+        if self.model_specific_info is None:
+            Exception("No model specific info added so far")
+        return self.frames_per_vid - self.model_specific_info.num_of_frames
 
-    def get_data_tuples(self, number_of_frames=2):
-        return self.num_of_vids*self.get_data_tuples_per_vid(number_of_frames)
+    def get_data_tuples(self):
+        if self.model_specific_info is None:
+            Exception("No model specific info added so far")
+        return self.num_of_vids * self.get_data_tuples_per_vid()
+
+    def add_model_specific_info(self, num_of_frames=2, latent_enc_shape=(2, 1, 1, 64), dim=3):
+        self.model_specific_info = ModelSpecificInfo(num_of_frames, latent_enc_shape, dim)
+
+    def get_num_of_frames(self):
+        if self.model_specific_info is None:
+            Exception("No model specific info added so far")
+        return self.model_specific_info.num_of_frames
+
+    def get_latent_enc_shape(self):
+        if self.model_specific_info is None:
+            Exception("No model specific info added so far")
+        return self.model_specific_info.latent_enc_shape
+
+    def get_dim(self):
+        if self.model_specific_info is None:
+            Exception("No model specific info added so far")
+        return self.model_specific_info.dim
+
+    def get_neural_state_dim(self):
+        if self.model_specific_info is None:
+            Exception("No model specific info added so far")
+        if self.model_specific_info.neural_state_dim is None:
+            Exception("No neural_state_dimension set")
+        return self.model_specific_info.neural_state_dim
+
+    def set_neural_state_dim(self, neuraL_state_dim):
+        if self.model_specific_info is None:
+            Exception("No model specific info added so far")
+        self.model_specific_info.neural_state_dim = neuraL_state_dim
+
 
 if __name__ == "__main__":
-    data_info = DatasetInfo("double_pendulum", 60, 1100)
+    data_info = DatasetInfo("3body_spring_chaotic_updated", 6, 5999)
     data_info.split_dataset()
     data_info.store_info_dict_as_json()

@@ -68,9 +68,10 @@ def __get_normalized_images(image_paths):
     return tf.map_fn(__extract_normalise_image, image_paths, fn_output_signature=tf.float32)
 
 
-def get_data_preprocessor(dataset_info, dim=3, num_of_frames=2, hidden_parts=False):
+def get_data_preprocessor(dataset_info, hidden_parts=False):
     path = str(dataset_info.get_path())
-
+    num_of_frames = dataset_info.get_num_of_frames()
+    dim = dataset_info.get_dim
     if dim != 3:
         def dim_adjust(x):
             return tf.concat(x, 1)  # tf.map_fn(lambda x: tf.squeeze(x, axis=0), x)
@@ -155,25 +156,22 @@ def get_data_preprocessor(dataset_info, dim=3, num_of_frames=2, hidden_parts=Fal
 
 
 class IndexArrayMapper():
-    def __init__(self, data, frames_per_vid, number_of_frames=2, hidden_data=None):
+    def __init__(self, data, dataset_info, hidden_data=None):
         self.data = data
-        self.frames_per_vid = frames_per_vid
-        self.output_data = hidden_data if hidden_data else self.data
-        self.num_of_frames = number_of_frames
+        self.frames_per_vid = dataset_info.frames_per_vid
+        self.output_data = hidden_data if hidden_data is not None else self.data
+        self.num_of_frames = dataset_info.get_num_of_frames()
 
     def index_array_mapper_3d(self, indices):
-        array_index = self.frames_per_vid * indices[0] + indices[1]
-        return (self.data[array_index: array_index + self.num_of_frames],
-                self.output_data[array_index + 1: array_index + self.num_of_frames + 1])
+        return (self.data[indices[0], indices[1]:indices[1] + self.num_of_frames],
+                self.output_data[indices[0], indices[1] + 1: indices[1] + self.num_of_frames + 1])
 
     def index_array_mapper_2d(self, indices):
-        array_index = self.frames_per_vid * indices[0] + indices[1]
-        return (tf.concat([self.data[i] for i in range(array_index, array_index + self.num_of_frames)]),
-                tf.concat(
-                    [self.output_data[i] for i in range(array_index + 1, array_index + self.num_of_frames + 1)]))
+        return (tf.concat([frame for frame in self.data[indices[0], indices[1]:indices[1] + self.num_of_frames]], 0),
+                tf.concat([frame for frame in self.output_data[indices[0], indices[1] + 1: indices[1] + self.num_of_frames + 1]], 0))
 
     def latent_array_mapper(self, indices):
-        x = self.data[indices[0] * self.frames_per_vid + indices[1]]
+        x = self.data[indices[0], indices[1]]
         return x, x
 
     def get_latent_index_array_mapper(self):
@@ -185,19 +183,20 @@ class IndexArrayMapper():
     def get_index_array_mapper(self, dim=3):
         if dim == 3:
             return lambda i: tf.py_function(
-                func=self.latent_array_mapper,
+                func=self.index_array_mapper_3d,
                 inp=[i],
                 Tout=[tf.float32, tf.float32])
         else:
             return lambda i: tf.py_function(
-                func=self.latent_array_mapper,
+                func=self.index_array_mapper_2d,
                 inp=[i],
                 Tout=[tf.float32, tf.float32])
 
 
-def get_array_mapper(data, frames_per_vid, number_of_frames=2, hidden_data=None, dim=3):
-    mapper_obj = IndexArrayMapper(data, frames_per_vid, number_of_frames=2, hidden_data=None)
-    return mapper_obj.get_index_array_mapper(dim=dim)
+def get_array_mapper(data, data_info, hidden_data=None, latent=False):
+    mapper_obj = IndexArrayMapper(data, data_info, hidden_data=hidden_data)
+    return mapper_obj.get_latent_index_array_mapper() if latent else mapper_obj.get_index_array_mapper(
+        dim=data_info.get_dim())
 
 
 def get_latent_array_mapper(data, frames_per_vid):
@@ -205,19 +204,15 @@ def get_latent_array_mapper(data, frames_per_vid):
     return mapper_obj.get_latent_index_array_mapper()
 
 
-def get_latent_memmap(dataset_info, filename, shape=(2, 1, 1, 64)):
+def get_latent_memmap(dataset_info, filename):
     path = os.path.join(dataset_info.get_latent_path(), filename)
+    shape = (dataset_info.number_of_vids, dataset_info.get_data_tuples_per_vid(),
+             dataset_info.get_num_of_frames(), dataset_info.get_latent_enc_shape())
     return np.memmap(path, shape=shape, dtype='float32', mode='r')
 
 
-def get_preprocessed_video_frames(dataset_info):
-    image_paths = [os.path.join(dataset_info.get_path(), str(i) + ".png") for i
-                   in range(dataset_info.files_per_folder)]
-    return __get_normalized_images(image_paths)
-
-
-def preprocess_specific_images(dataset_info, hidden_parts=False):
-    path = str(dataset_info.get_path())
+def get_specific_image_preprocessor(dataset_info, hidden=False):
+    path = str(dataset_info.get_path(hidden=hidden))
 
     def __data_entry_preprocessor(indices):
         """
@@ -249,13 +244,4 @@ def preprocess_specific_images(dataset_info, hidden_parts=False):
 
 
 if __name__ == '__main__':
-    from dataset_info import DatasetInfo
-    from images_to_arrays_util import images_to_arrays
-
-    dataset_info = DatasetInfo.read_from_file("double_pendulum")
-
-    prep = get_latent_memmap(dataset_info, "points", (dataset_info.get_data_tuples(), 2, 1, 1, 64))
-    for i in range(100):
-        for j in range(58):
-            print(prep((i, j)))
-    # print(images_to_arrays(prep, list(range(dataset_info.num_of_vids)[:50]), dataset_info.frames_per_vid)[:5])
+    pass

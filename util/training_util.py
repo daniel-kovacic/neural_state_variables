@@ -22,7 +22,7 @@ def train_autoencoder(autoencoder, training_dataset, validation_dataset,
         dataset used for training.
     validation_dataset : tf.data.Dataset
         dataset used for validation during training.
-    steps_per_epoch : tf.data.Dataset
+    steps_per_epoch : int
         dataset used for training.
     save_path : str, optional
         path where the trained model should be saved
@@ -58,8 +58,8 @@ def train_autoencoder(autoencoder, training_dataset, validation_dataset,
     # train model using stable learning rate, Adam optimizer, MAE for clear edges
     autoencoder.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate), loss=loss)
     history = autoencoder.fit(training_dataset, epochs=epochs,
-                              steps_per_epoch=steps_per_epoch
-                              , validation_data=validation_dataset,
+                              steps_per_epoch=steps_per_epoch,
+                              validation_data=validation_dataset,
                               validation_steps=validation_steps,
                               callbacks=callbacks)
     return history
