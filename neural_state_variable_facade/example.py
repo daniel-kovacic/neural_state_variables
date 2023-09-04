@@ -1,4 +1,4 @@
-from extract_neural_state_variables import *
+from facade import *
 
 if __name__ == "__main__":
     # create dataset_info which includes most information about the dataset and used model.

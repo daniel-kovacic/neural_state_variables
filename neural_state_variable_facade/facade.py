@@ -1,14 +1,6 @@
 import numpy as np
 
-import util.model_definition_util
-import util.index_mapper
-import util.dataset_util
-import util.training_util
-import util.create_latent_space_predictions
-import util.levina_bickels_algorithm
-import util.single_step_visualization_util
-import util.longterm_prediction_util
-import util.dataset_info
+import util
 import os
 
 
@@ -106,7 +98,7 @@ def get_dataset_info_from_file(dataset_name):
     -------
     DatasetInfo
     """
-    return util.dataset_info.DatasetInfo.read_from_file(dataset_name)
+    return util.dataset_info_util.DatasetInfo.read_from_file(dataset_name)
 
 
 def create_dataset_info(dataset_name, frames_per_video, num_of_videos, train_ind=None,
@@ -121,7 +113,7 @@ def create_dataset_info(dataset_name, frames_per_video, num_of_videos, train_ind
     frames_per_video: int
         number of frames used as input for the corresponding model
     num_of_videos: int
-        number of videos in the
+        number of videos in the dataset
     train_ind: list int
         list of video indices corresponding to videos which should be used for training.
         If it is not specified the partitioning of data is done randomly in a 0.8/0.1/0.1 split
@@ -139,7 +131,7 @@ def create_dataset_info(dataset_name, frames_per_video, num_of_videos, train_ind
     -------
     DatasetInfo
     """
-    dataset_info = util.dataset_info.DatasetInfo(
+    dataset_info = util.dataset_info_util.DatasetInfo(
         dataset_name, frames_per_video, num_of_videos, train_ind=train_ind, val_ind=val_ind, test_ind=test_ind)
 
     if not train_ind:

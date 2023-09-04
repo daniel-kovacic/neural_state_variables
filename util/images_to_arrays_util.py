@@ -25,5 +25,5 @@ def standard_images_to_arrays(dataset_info, hidden_part=False):
 
 
 if __name__ == "__main__":
-    from dataset_info import DatasetInfo
+    from dataset_info_util import DatasetInfo
     standard_images_to_arrays(dataset_info=DatasetInfo.read_from_file("3body_spring_chaotic_updated"), hidden_part=True)

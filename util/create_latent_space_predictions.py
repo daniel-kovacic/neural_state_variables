@@ -76,7 +76,7 @@ def create_encodings(dataset_info, dataset, autoencoder, filename="points", memm
 
 
 if __name__ == "__main__":
-    from dataset_info import DatasetInfo
+    from dataset_info_util import DatasetInfo
     from dataset_util import DatasetUtil
     import tensorflow as tf
     from index_mapper import get_data_preprocessor

@@ -380,7 +380,7 @@ class SingleStepVisualizationUtil:
 
 
 if  __name__ == "__main__":
-    from dataset_info import DatasetInfo
+    from dataset_info_util import DatasetInfo
     from dataset_util import DatasetUtil
     from index_mapper import *
     dataset_info = DatasetInfo.read_from_file("double_pendulum")
