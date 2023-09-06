@@ -1,47 +1,23 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
-import numpy as np
 import matplotlib.pyplot as plt
 
 
 # plot an illustration of prediction and error on a random element
 # of given 2d-dataset given
 class SingleStepVisualizationUtil:
-    """
-    Class with functions for producing plots for visualization 
-    of learning progress
-
-    Methods
-    -------
-
-    """
 
 
     @staticmethod
-    def _delta_t_string_helper(i):
+    def __delta_t_string_helper(i):
+
         return r" + {}$\Delta t$".format(i if i != 1 else "") if i != 0 else ""
 
     @staticmethod
-    def _split_2d_tensor(tensor):
-        width= 128
+    def __split_2d_tensor(tensor):
+        width = 128
         print(tf.concat([tf.expand_dims(tensor[i*width:(i* + 1)*width], 0) for i in range(tf.shape(tensor)[0] // width)], 0))
         return tf.concat([tf.expand_dims(tensor[i*width:(i + 1)*width], 0) for i in range(tf.shape(tensor)[0] // width)], 0)
-
-    """
-    @staticmethod
-    def create_image_tensors_2d(input_image_tensor, prediction_image_tensor, expected_output_image_tensor):
-
-        input_tensor_split = SingleStepVisualizationUtil._split_2d_tensor(input_image_tensor)
-        expected_output_tensor_split = SingleStepVisualizationUtil._split_2d_tensor(expected_output_image_tensor)
-        prediction_tensor_split = SingleStepVisualizationUtil._split_2d_tensor(prediction_image_tensor)
-        error_img = SingleStepVisualizationUtil._split_2d_tensor(
-            prediction_image_tensor - expected_output_image_tensor)
-        difference_input_expected_output = SingleStepVisualizationUtil._split_to_images_2d(
-            prediction_image_tensor - input_image_tensor)
-        return [input_tensor_split, expected_output_tensor_split,
-                expected_output_tensor_split, prediction_tensor_split,
-                error_img, difference_input_expected_output]
-    """
 
     @staticmethod
     def show_single_prediction(autoencoder, dataset, images=None, dim=3, title=None, multiple_plots=False,
@@ -78,25 +54,42 @@ class SingleStepVisualizationUtil:
         input_tensor, output_tensor, prediction_tensor = \
             SingleStepVisualizationUtil.create_image_tensors(images, autoencoder)
         if dim != 3:
-            input_tensor = SingleStepVisualizationUtil._split_2d_tensor(input_tensor)
-            output_tensor = SingleStepVisualizationUtil._split_2d_tensor(output_tensor)
-            prediction_tensor = SingleStepVisualizationUtil._split_2d_tensor(prediction_tensor)
+            input_tensor = SingleStepVisualizationUtil.__split_2d_tensor(input_tensor)
+            output_tensor = SingleStepVisualizationUtil.__split_2d_tensor(output_tensor)
+            prediction_tensor = SingleStepVisualizationUtil.__split_2d_tensor(prediction_tensor)
 
         (input_images, expected_output_images, output_images, error_images, difference_input_expected_output) = \
             SingleStepVisualizationUtil.create_single_prediction_images(
                 input_tensor, output_tensor, prediction_tensor)
 
         if multiple_plots:
-            SingleStepVisualizationUtil._plot_predictions_on_multiple_plots(
+            SingleStepVisualizationUtil.__plot_predictions_on_multiple_plots(
                 input_images, expected_output_images, output_images, error_images, difference_input_expected_output,
                 with_titles, save_path=save_path)
         else:
-            SingleStepVisualizationUtil._plot_predictions_on_single_plot(
+            SingleStepVisualizationUtil.__plot_predictions_on_single_plot(
                 input_images, expected_output_images, output_images, error_images, difference_input_expected_output,
                 title)
 
     @staticmethod
     def create_single_prediction_images(input_image_tensor, output_image_tensor, prediction_tensor):
+        """
+        creates images comparing true and expected outputs from the result tensor of a single image
+        Parameters
+        ----------
+        input_image_tensor: list-tf.Tensor
+            list of inputs
+        output_image_tensor:list-tf.Tensor
+            list of predicted outputs
+        prediction_tensor:list-tf.Tensor
+            list of outputs
+
+        Returns
+        -------
+        tuple-Image:
+            Tuple of images for visualization
+
+        """
         input_images = [tf.keras.preprocessing.image.array_to_img(input_image * 255, scale=False)
                         for input_image in input_image_tensor]
         expected_output_images = [
@@ -116,14 +109,27 @@ class SingleStepVisualizationUtil:
 
     @staticmethod
     def create_image_tensors(images, autoencoder):
+        """
+        creates prediction tensors
+        Parameters
+        ----------
+        images: tuple-tf.Tensors:
+            images
+        autoencoder: tf.keras.model.Nodel
+
+        Returns
+        -------
+        tuple-tf.Tensor
+
+        """
         input_tensor, output_tensor = images[0][0], images[1][0]
         input_batch = tf.expand_dims(input_tensor, axis=0)
         prediction_tensor = autoencoder.predict(input_batch)[0]
         return input_tensor, output_tensor, prediction_tensor
 
     @staticmethod
-    def _plot_predictions_on_single_plot(input_images, expected_output_images, output_images,
-                                         error_images, difference_input_expected_output, title):
+    def __plot_predictions_on_single_plot(input_images, expected_output_images, output_images,
+                                          error_images, difference_input_expected_output, title):
 
         number_of_frames = len(input_images)
         fig = plt.figure(figsize=(4 * number_of_frames, 30))
@@ -136,7 +142,7 @@ class SingleStepVisualizationUtil:
 
         for i in range(0, number_of_frames):
             ax[0][i].imshow(input_images[i])
-            ax[0][i].set_title('Input image time t {}'.format(SingleStepVisualizationUtil._delta_t_string_helper(i)))
+            ax[0][i].set_title('Input image time t {}'.format(SingleStepVisualizationUtil.__delta_t_string_helper(i)))
 
         for i in range(0, number_of_frames - 1):
             ax[1][i].imshow(expected_output_images[i])
@@ -160,8 +166,8 @@ class SingleStepVisualizationUtil:
             ax[4][i].imshow(difference_input_expected_output[i])
             ax[4][i].set_title(
                 '\'true\' difference at t{} and t{}'
-                .format(SingleStepVisualizationUtil._delta_t_string_helper(i),
-                        SingleStepVisualizationUtil._delta_t_string_helper(i + 1)))
+                .format(SingleStepVisualizationUtil.__delta_t_string_helper(i),
+                        SingleStepVisualizationUtil.__delta_t_string_helper(i + 1)))
 
         if title:
             fig.suptitle(title)
@@ -169,14 +175,14 @@ class SingleStepVisualizationUtil:
         plt.show()
 
     @staticmethod
-    def _remove_borders(fig):
+    def __remove_borders(fig):
         fig.subplots_adjust(bottom=0)
         fig.subplots_adjust(top=1)
         fig.subplots_adjust(right=1)
         fig.subplots_adjust(left=0)
 
     @staticmethod
-    def _plot_predictions_on_multiple_plots(
+    def __plot_predictions_on_multiple_plots(
             input_images, expected_output_images, output_images, error_images, difference_input_expected_output,
             with_titles=True, save_path=None):
 
@@ -184,10 +190,10 @@ class SingleStepVisualizationUtil:
         for i in range(0, number_of_frames):
             fig = plt.figure(frameon=False)
             plt.imshow(input_images[i], aspect="auto")
-            SingleStepVisualizationUtil._remove_borders(fig)
+            SingleStepVisualizationUtil.__remove_borders(fig)
             plt.axis("off")
             if with_titles:
-                plt.title('Input image time t {}'.format(SingleStepVisualizationUtil._delta_t_string_helper(i)))
+                plt.title('Input image time t {}'.format(SingleStepVisualizationUtil.__delta_t_string_helper(i)))
             if save_path:
                 input_images[i].save("{}_input_{}.png".format(save_path, i), "PNG")
             plt.show()
@@ -195,7 +201,7 @@ class SingleStepVisualizationUtil:
         for i in range(0, number_of_frames - 1):
             fig = plt.figure(frameon=False)
             plt.imshow(expected_output_images[i], aspect="auto")
-            SingleStepVisualizationUtil._remove_borders(fig)
+            SingleStepVisualizationUtil.__remove_borders(fig)
             if with_titles:
                 plt.title('Expected reconstructed image')
             plt.axis("off")
@@ -205,7 +211,7 @@ class SingleStepVisualizationUtil:
             plt.show()
         fig = plt.figure(frameon=False)
         plt.imshow(expected_output_images[-1], aspect="auto")
-        SingleStepVisualizationUtil._remove_borders(fig)
+        SingleStepVisualizationUtil.__remove_borders(fig)
         plt.axis("off")
         if save_path:
             expected_output_images[-1].save("{}_expected_prediction.png".format(save_path), "PNG")
@@ -216,7 +222,7 @@ class SingleStepVisualizationUtil:
         for i in range(0, number_of_frames - 1):
             fig = plt.figure(frameon=False)
             plt.imshow(output_images[i], aspect="auto")
-            SingleStepVisualizationUtil._remove_borders(fig)
+            SingleStepVisualizationUtil.__remove_borders(fig)
             if with_titles:
                 plt.title('Reconstructed image')
             plt.axis("off")
@@ -226,7 +232,7 @@ class SingleStepVisualizationUtil:
             plt.show()
         fig = plt.figure(frameon=False)
         plt.imshow(output_images[number_of_frames - 1], aspect="auto")
-        SingleStepVisualizationUtil._remove_borders(fig)
+        SingleStepVisualizationUtil.__remove_borders(fig)
         plt.axis("off")
         if with_titles:
             plt.title('Predicted image')
@@ -237,7 +243,7 @@ class SingleStepVisualizationUtil:
         for i in range(0, number_of_frames - 1):
             fig = plt.figure(frameon=False)
             plt.imshow(error_images[i], aspect="auto")
-            SingleStepVisualizationUtil._remove_borders(fig)
+            SingleStepVisualizationUtil.__remove_borders(fig)
             if with_titles:
                 plt.title('Reconstruction error bitmap')
             plt.axis("off")
@@ -246,7 +252,7 @@ class SingleStepVisualizationUtil:
             plt.show()
         fig = plt.figure(frameon=False)
         plt.imshow(error_images[number_of_frames - 1], aspect="auto")
-        SingleStepVisualizationUtil._remove_borders(fig)
+        SingleStepVisualizationUtil.__remove_borders(fig)
         plt.axis("off")
         if with_titles:
             plt.title('Prediction error bitmap')
@@ -257,20 +263,19 @@ class SingleStepVisualizationUtil:
         for i in range(0, number_of_frames):
             fig = plt.figure(frameon=False)
             plt.imshow(difference_input_expected_output[i], aspect="auto")
-            SingleStepVisualizationUtil._remove_borders(fig)
+            SingleStepVisualizationUtil.__remove_borders(fig)
             if with_titles:
                 plt.title(
                     'Difference\'true\' frames at time t{} and t{}'
-                    .format(SingleStepVisualizationUtil._delta_t_string_helper(i),
-                            SingleStepVisualizationUtil._delta_t_string_helper(i + 1)))
+                    .format(SingleStepVisualizationUtil.__delta_t_string_helper(i),
+                            SingleStepVisualizationUtil.__delta_t_string_helper(i + 1)))
             plt.axis("off")
             if save_path:
                 difference_input_expected_output[i].save("{}_change_between_frames_{}.png".format(save_path, i))
             plt.show()
 
     @staticmethod
-    def create_tensors_latent_rec(
-            images, dynamics_pred_autoencoder, latent_rec_autoencoder):
+    def create_tensors_latent_rec(images, dynamics_pred_autoencoder, latent_rec_autoencoder):
         """
         generates tensors needed for visualization of latent rec.
 
@@ -341,7 +346,7 @@ class SingleStepVisualizationUtil:
         if as_multiple_plots:
             for i, pred in enumerate(predictions):
                 plt.axis('off')
-                SingleStepVisualizationUtil._remove_borders(fig)
+                SingleStepVisualizationUtil.__remove_borders(fig)
                 prediction_img = tf.keras.preprocessing.image.array_to_img(pred * 255, scale=False)
                 plt.imshow(prediction_img, aspect='auto')
                 if save_path:
@@ -356,6 +361,7 @@ class SingleStepVisualizationUtil:
 
             plt.show()
 
+    @staticmethod
     def plot_longer_prediction_mse(predictions, expected, title=None):
         """
         plots mse of two listss of image tensors with equal lengths
@@ -377,19 +383,4 @@ class SingleStepVisualizationUtil:
         if title:
             plt.title(title)
         plt.show()
-
-
-if  __name__ == "__main__":
-    from dataset_info_util import DatasetInfo
-    from dataset_util import DatasetUtil
-    from index_mapper import *
-    dataset_info = DatasetInfo.read_from_file("double_pendulum")
-    dataset_util = DatasetUtil(dataset_info)
-    dataset = dataset_util.get_dataset(index_mapper=get_data_preprocessor(dataset_info, dim=3), mode="val",
-                                       data_tuples_per_vid=dataset_info.get_data_tuples_per_vid(2))
-    autoencoder = tf.keras.models.load_model(
-        r"C:\Users\kovac\PycharmProjects\neural_state_variables\models\double_pendulum_dyn_pred_3d_2frames")
-    latent_autoencoder = tf.keras.models.load_model(
-        r"C:\Users\kovac\PycharmProjects\neural_state_variables\models\double_pendulum_latent_rec_3d_2frames")
-    SingleStepVisualizationUtil.show_single_prediction(autoencoder, dataset, dim=3, latent_rec_autoencoder=latent_autoencoder)
 

@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon May  8 11:50:37 2023
 
-@author: kovac
-"""
 import tensorflow as tf
 import cv2
 import os
@@ -56,9 +52,10 @@ def predict_longterm_latent_supported(input_frames, pred_autoencoder, latent_aut
                                       latent_steps=4):
     """
     function used for long term predictions. Repeatedly
-    predicts the next timestep and uses it as final frame of input
-    for the next predictions. Uses latent reconstruction to project invalid
-    input to a low dimensional space and likely transform it back to valid input.
+    predicts the next timestep and uses it as the final frame of input
+    for the next predictions.
+    Uses latent reconstruction to project invalid input to a low dimensional space and likely transform it
+     back to valid input.
     latent reconstruction is used every latent_steps-time
 
 
@@ -78,7 +75,7 @@ def predict_longterm_latent_supported(input_frames, pred_autoencoder, latent_aut
 
     latent_steps : int, optional
         number of step at which latent reconstruction is used.
-        (Every latent_steps steps a the latent reconstruction autoencoder
+        (Every latent_steps steps the latent reconstruction autoencoder
          is used) The default is 4.
 
     Returns
@@ -110,14 +107,57 @@ def predict_longterm_latent_supported(input_frames, pred_autoencoder, latent_aut
 
 
 def get_abs_difference(predictions, expected):
+    """
+    calculates the absolute difference between predicted and ground truth frames
+    Parameters
+    ----------
+    predictions: list-tf.Tensor
+        predicted frames
+    expected: list-tf.Tensor
+        ground truth frames
+
+    Returns
+    -------
+    list-tf.Tensor:
+        list of absolute differences between predicted and ground truth frames
+    """
     return [tf.math.abs(pred - exp) for (pred, exp) in zip(predictions, expected)]
 
 
 def get_frames_from_single_vid(mapper, video_index, num_frames_per_vid):
+    """
+    returns list of frames in specified video
+
+    Parameters
+    ----------
+    mapper: function
+        function mapping (vid_index, frame_index) to normalized frame
+    video_index: int
+        index of video that should be returned
+    num_frames_per_vid: int
+        number of frames in vid
+
+    Returns
+    -------
+
+    """
     return [mapper((video_index, j)) for j in range(num_frames_per_vid)]
 
 
 def store_video_frames(video_frames, path):
+    """
+    stores arrays as image files with name {index}.png in specified folder
+    Parameters
+    ----------
+    video_frames: list-np.arrays
+        list of frames encoded as normalized np.arrays
+    path: str
+        path to folder
+
+    Returns
+    -------
+
+    """
     for i, frame in enumerate(video_frames):
         tf.keras.utils.array_to_img(frame * 255, scale=False).save(os.path.join(path, f"{i}.png"))
 
@@ -125,14 +165,14 @@ def store_video_frames(video_frames, path):
 def combine_frames_to_video(dir_path, video_path):
     """
     converts a set of frames stored in png format to one mp4 video.
-    frames must contain end with their cordinal number
+    frames must contain end with their cardinal number
     in the following way: "0.png, 1.png... n.png"
     Parameters
     ----------
     dir_path : str
         path to the directory where the video frames are stored.
     video_path : str
-        path where the resulting video is stored.
+        path where the resulting video should be stored.
         Needs to include filename and needs to end with .mp4.
 
     Returns

@@ -10,7 +10,22 @@ import numpy as np
 
 
 def create_latent_space_array(dataset_info, filename="points", memmap=True):
+    """
+    returns a np.array or np.memmap array in which the latent encoding is stored
+    Parameters
+    ----------
+    dataset_info: DatasetInfo
+        Info about the used dataset
+    filename: str
+        filename to which the memmap, if selected, is saved
+    memmap: boolean
+        defines if the returned array is a standard np.array or np.memmap array
 
+    Returns
+    -------
+    np.array/np.memmap array:
+        array of the correct size
+    """
     shape = (dataset_info.num_of_vids, dataset_info.get_data_tuples_per_vid(), *dataset_info.get_latent_enc_shape())
 
     if memmap:
@@ -30,31 +45,27 @@ def create_latent_space_array(dataset_info, filename="points", memmap=True):
         return np.zeros(shape)
 
 
-def create_encodings(dataset_info, dataset, autoencoder, filename="points", memmap=True, is_neural=False):
+def create_encodings(dataset_info, dataset, autoencoder, filename="points", memmap=True):
     """
     uses DatasetUtil instance and provided autoencoder to store
     latent space encodings as np.memmap
 
     Parameters
     ----------
-    dataset_util : DatasetUtil
         dataset util giving access and information about dataset which is to
         be encoded by the provided autoencoder
+    dataset : Dataset
+        dataset from which elments are encoded
     autoencoder : tf.keras.model
-        dynamics prediction autoencoder used for encoding video frames from
-        dataset
-    dim : int, optional
-        2/3 depending on if the autoencoder uses 2D or 3D convoltion.
-        The default is 3.
-    encoding_shape : tuple, optional
-        latent space dimension of the used autoencoder.
-        The default is (2,1,1,64).
+        dynamics prediction autoencoder used for encoding video frames from the dataset
     filename : str, optional
         name of the encoded np.memmap file. The default is "points".
+    memmap: boolean
+        decides if array is stored as np.memmap or just returned
 
     Returns
     -------
-    np.array
+    np.array/np.memmap array
         array with the latent encodings
 
     """

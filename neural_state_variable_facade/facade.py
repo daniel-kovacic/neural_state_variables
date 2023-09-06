@@ -3,6 +3,8 @@ import numpy as np
 import util
 import os
 
+PIXEL_LEN = 128
+
 
 def get_latent_encoding_shape_from_dataset_info(dataset_info):
     """
@@ -22,7 +24,7 @@ def get_latent_encoding_shape_from_dataset_info(dataset_info):
 def get_latent_encoding_shape(num_of_frames=2, dim=3):
     """
         The shape of the latent encoding is calculated depending on the number of frames used as input and the
-        specific model architecture used.
+        model architecture used.
 
         Parameters
         ----------
@@ -42,7 +44,7 @@ def get_latent_encoding_shape(num_of_frames=2, dim=3):
 def load_untrained_dynamics_prediction_autoencoder(dataset_info):
     """
         Initializes the correct untrained dynamics prediction autoencoder.
-        Depending on if 2 dimensional or 3 dimensional convolution was selected.
+        Depends on if 2- or 3-dimensional convolution was chosen.
 
         Parameters
         ----------
@@ -56,10 +58,10 @@ def load_untrained_dynamics_prediction_autoencoder(dataset_info):
     num_of_frames = dataset_info.get_num_of_frames()
     dim = dataset_info.get_dim()
     if dim == 3:
-        shape = (num_of_frames, 128, 128, 3)
+        shape = (num_of_frames, PIXEL_LEN, PIXEL_LEN, 3)
         autoencoder = util.model_definition_util.dynamics_autoencoder_def_3d_updated2(input_shape=shape)
     else:
-        shape = (num_of_frames * 128, 128, 3)
+        shape = (num_of_frames * PIXEL_LEN, PIXEL_LEN, 3)
         autoencoder = util.model_definition_util.dynamics_autoencoder_def_2d(input_shape=shape)
 
     dataset_info.add_model_specific_info(num_of_frames=num_of_frames, dim=dim,
@@ -116,7 +118,7 @@ def create_dataset_info(dataset_name, frames_per_video, num_of_videos, train_ind
         number of videos in the dataset
     train_ind: list int
         list of video indices corresponding to videos which should be used for training.
-        If it is not specified the partitioning of data is done randomly in a 0.8/0.1/0.1 split
+        If it is not specified the partitioning of data in train/val/test is done randomly in a 0.8/0.1/0.1 split
     val_ind: list int
         list of video indices corresponding to videos which should be used for validation.
     test_ind: list int
@@ -124,7 +126,9 @@ def create_dataset_info(dataset_name, frames_per_video, num_of_videos, train_ind
     dim : int
         dim of the convolution used by the model
     num_of_frames : int
-        umber of frames used as input for the model
+        number of frames used as input for the model
+    save_data_info: boolean
+        defines if the created save-data should be saved to a json file.
 
 
     Returns
@@ -146,46 +150,48 @@ def create_dataset_info(dataset_name, frames_per_video, num_of_videos, train_ind
 
 def get_memmap_data(file_path, data_info):
     """
-    returns np.memmap frames at the file path using data_info to find the shape.
+    returns np.memmap frames at the file path using the data_info object to determine the shape.
     Parameters
     ----------
     file_path: str
         path where np.memmap frame data is stored
-    data_info: DataInfo
-        DataInfo objects containing the information required to to determine the shape of the memory mapped data
+    data_info: DatasetInfo
+        DatasetInfo objects containing the information required to determine the shape of the memory mapped data
 
     Returns
     -------
     np.memmap:
         memmaped numpy arra containing preprocessed data frames.
     """
-    shape = (data_info.num_of_vids, data_info.frames_per_vid, 128, 128, 3)
+    shape = (data_info.num_of_vids, data_info.frames_per_vid, PIXEL_LEN, PIXEL_LEN, 3)
     return np.memmap(file_path, shape=shape, dtype='float32')
 
 
 def get_dataset_generator(dataset_info, data_array=None, hidden_data_array=None, has_hidden_parts=False, latent=False):
     """
     a function which returns a parametrized version of the get_dataset function which allows to obtain
-    different dataset for the same model without all arguments
+    different dataset for the same model repeatedly specifying all the model/dataset specific data
     Parameters
     ----------
     dataset_info: DatasetInfo
         DatasetInfo objects which obtains important information about dataset and models
-    data_array: np.array
+    data_array: np.Array
         numpy array containing the input frames
     hidden_data_array: np.array.
     If this is not specified it is assumed that the data is stored as images in the required format.
         numpy array containing the expected output frames
     has_hidden_parts: boolean
         deteremines if the dataset has hidden parts only relevant if no arrays are provided as input
-    latent
+    latent: boolean
+        determines if the returned dataset generator is on latent or original frame-data.
 
     Returns
     -------
         function:
-            function which returns datasets with only few arguments.
+            function which returns datasets without having to specify all model/dataset specific data.
 
     """
+
     def parametrized_get_dataset(mode="train", one_vid_per_batch=False, sequential=False):
         return get_dataset(dataset_info, data_array=data_array, hidden_data_array=hidden_data_array,
                            has_hidden_parts=has_hidden_parts, latent=latent, mode=mode,
@@ -196,6 +202,32 @@ def get_dataset_generator(dataset_info, data_array=None, hidden_data_array=None,
 
 def get_dataset(dataset_info, data_array=None, hidden_data_array=None, has_hidden_parts=False,
                 sequential=False, mode="train", latent=False, one_vid_per_batch=False):
+    """
+
+    Parameters
+    ----------
+    dataset_info: DatasetInfo
+        DatasetInfo objects which obtains important information about dataset and models
+    data_array: np.Array
+        numpy array containing the input frames
+    hidden_data_array: np.array.
+    If this is not specified it is assumed that the data is stored as images in the required format.
+        numpy array containing the expected output frames
+    has_hidden_parts: boolean
+        deteremines if the dataset has hidden parts only relevant if no arrays are provided as input
+    latent: boolean
+        determines if the returned dataset generator is on latent or original frame-data.
+    sequential: boolean
+        determines if the returned dataset generates data sequentially or randomly
+    mode: str
+        string with value: "train", "val" or "test" determines which set of videos the dataset consists of
+    one_vid_per_batch: boolean
+        determines if each batch should consist of a single video or the default 32 data tuples
+
+    Returns
+    -------
+
+    """
     if one_vid_per_batch:
         batch_size = dataset_info.get_data_tuples_per_vid()
     else:
@@ -217,32 +249,147 @@ def get_dataset(dataset_info, data_array=None, hidden_data_array=None, has_hidde
 
 def train_dynamics_prediction_autoencoder(train_dataset, val_dataset, dyn_pred_autoencoder,
                                           steps_per_epoch=300, validation_steps=30, epochs=100, save_path=None):
+    """
+    Trains the given dynamics prediction autoencoder. Automatically terminates if the validation error does not improve.
+    Optionally saves new best model weights to the specified path after each epoch
+
+    Parameters
+    ----------
+    train_dataset: tf.data.Dataset
+        Dataset consisting of the videos labeld as training data
+    val_dataset:
+        Dataset consisting of the videos labeld as validation data
+    dyn_pred_autoencoder: tf.keras.Model
+        dynamics prediction autoencoder which should be trained
+    steps_per_epoch: int
+        steps per epoch since the dataset used are mostly very big it often time makes sense to not define epochs
+        in the standard way
+    validation_steps: int
+        steps used to calculate the validation error
+    epochs: int
+        maximum number of epochs before training terminates
+    save_path: None/str
+        path to which the model weights should be saved after each epoch.
+
+    Returns
+    -------
+
+    """
     util.training_util.train_autoencoder(dyn_pred_autoencoder, train_dataset, val_dataset, steps_per_epoch,
                                          validation_steps=validation_steps, epochs=epochs, save_path=save_path)
 
 
 def train_latent_rec_autoencoder(train_dataset, val_dataset, latent_rec_autoencoder,
                                  steps_per_epoch=1700, validation_steps=100, epochs=500, save_path=None):
+
+    """
+    Trains the given dynamics prediction autoencoder. Automatically terminates if the validation error does not improve.
+    Optionally saves new best model weights to the specified path after each epoch
+
+    Parameters
+    ----------
+    train_dataset: tf.data.Dataset
+        Dataset consisting of the videos labeld as training data
+    val_dataset:
+        Dataset consisting of the videos labeld as validation data
+    latent_rec_autoencoder: tf.keras.Model
+        Latent reconstruction autoencoder which should be trained
+    steps_per_epoch: int
+        steps per epoch since the dataset used are mostly very big it often time makes sense to not define epochs
+        in the standard way
+    validation_steps: int
+        steps used to calculate the validation error
+    epochs: int
+        maximum number of epochs before training terminates
+    save_path: None/str
+        path to which the model weights should be saved after each epoch.
+
+    Returns
+    -------
+
+    """
     util.training_util.train_autoencoder(latent_rec_autoencoder, train_dataset, val_dataset, steps_per_epoch,
                                          validation_steps=validation_steps, epochs=epochs, save_path=save_path)
 
 
 def create_latent_space_predictions(dataset_info, dataset, dynamics_pred_autoencoder, memmap=False, filename="points"):
+    """
+    Creates the latent space prediction of a dynamics prediction autoencoder for the specified dataset and optionally
+    stores them to a np.memmap file at the specified path.
+
+    Parameters
+    ----------
+    dataset_info: DatasetInfo
+        DatasetInfo object with the required infomration about the dataset
+    dataset: tf.data.Dataset
+        Dataset object holding the data that should be encoded. This Dataset should return all the data from one video
+         per batch and should return the data sequentially.
+    dynamics_pred_autoencoder: tf.keras.Model
+        autoencoder used for encoding the data
+    memmap: boolean
+        determines if the result should be stored to a file in the as memmap.
+    filename:
+        the name of the memmap file. full path is ./latent_data/{filename} relative to the project root
+
+    Returns
+    -------
+    np.array:
+        full latent encoding of the shape (num_of_vids, number_of_encodings, *encoding_shape)
+        where number_of_encodings = frames_per_vid - number_of_frames + 1
+    """
     return util.create_latent_space_predictions.create_encodings(
         dataset_info, dataset, dynamics_pred_autoencoder, memmap=memmap, filename=filename)
 
 
 def find_intrinsic_dimension(dataset_info, latent_encoding):
+    """
+    Finds the intrinsic dimension of a latent encoding of the dataset using the Levina Bickel's algorithm.
+
+    Parameters
+    ----------
+    dataset_info: DatasetInfo
+        DatasetInfo object used to determine the shape of the encoding.
+    latent_encoding: np.array
+        the encodings on which the Levina Bickel's algorithm is used
+
+    Returns
+    -------
+    int:
+        The rounded intrinsic dimension found by the Levina-Bickel's algorithm
+
+    """
+
+    # flattens encoding to the correct shape as the used nearest neighbour implementation of Scikit-learn only
+    # accepts standard Matrices as input
     flattend_encoding = util.levina_bickels_algorithm.reshape_array_for_levina_bickels_alg(latent_encoding,
                                                                                            dataset_info)
     intrinsic_dim = util.levina_bickels_algorithm.levina_bickels_alg(flattend_encoding)[0]
-    print(f"The intrinsic dimension approximation found by the Levina Bickel's alggorithm is: of the dataset is:"
-          f" {intrinsic_dim}")
     dataset_info.set_neural_state_dim(round(intrinsic_dim))
     return intrinsic_dim
 
 
 def visualize_single_prediction(autoencoder, dataset, dataset_info, latent_rec_autoencoder=None):
+    """
+    outputs a visualization of a single prediction and its errors, optionally a dynamics prediction autoencoder and
+    combined with its corresponding latent recreation autoencoder can be visualized together
+
+    Parameters
+    ----------
+    autoencoder: tf.keras.Model
+        autoencoder for which a single prediction should be visualized. Either a latent reconstruction autoencoder
+        or a dynamics prediction autoencoder.
+    dataset: tf.data.Datasets
+        dataset from which one prediction will be visualized
+    dataset_info: DatasetInfo
+        DatasetInfo with the required information
+    latent_rec_autoencoder: tf.keras.Model/None
+        optional latent_rec_autoencoder which will be visualized in combination with the first autoencoder
+        which in this case has to be the corresponding dynamics prediction autoencoder
+
+    Returns
+    -------
+
+    """
     title = f"Single Step {'Latent reconstruction ' if latent_rec_autoencoder else ''}prediction"
     util.single_step_visualization_util.SingleStepVisualizationUtil.show_single_prediction(
         autoencoder, dataset, dim=dataset_info.get_dim(), latent_rec_autoencoder=latent_rec_autoencoder, title=title)
@@ -250,6 +397,23 @@ def visualize_single_prediction(autoencoder, dataset, dataset_info, latent_rec_a
 
 def make_longterm_prediction(dataset_info, dynamics_pred_autoencoder, video_index=0, path="./",
                              latent_rec_autoencoder=None):
+    """
+
+    Parameters
+    ----------
+    dataset_info: DatasetInfo
+    dynamics_pred_autoencoder: tf.keras.Model
+        dynamics prediction autoencoder which should be visualied
+    video_index: int
+        index of the video which should be visualized
+    path: str
+        path where the longterm prediction videos should be stored
+    latent_rec_autoencoder: tf.keras.Model/None
+        optional latent_rec_autoencoder to show latent supported longterm predicitons
+    Returns
+    -------
+
+    """
     num_of_frames = dataset_info.get_num_of_frames()
     index_mapper = util.index_mapper.get_specific_image_preprocessor(dataset_info)
     single_video_frames = util.longterm_prediction_util.get_frames_from_single_vid(

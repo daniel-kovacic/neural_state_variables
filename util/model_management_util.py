@@ -10,10 +10,6 @@ class ModelManagementUtil:
     """
     Class used for loading and saving models to enforce chosen
     naming structure.
-
-    Methods
-    -------
-
     """
 
     DIR = "../models"
@@ -29,12 +25,12 @@ class ModelManagementUtil:
         dataset_str : str
             dataset name.
         dim : int, optional
-            2/3 depending if the model uses 2D or 3D convolution.
+            2/3 depending on if the model uses 2D or 3D convolution.
             The default is 3.
         frames : int, optional
             number of frames the model uses. The default is 2.
         name : str, optional
-            optional extra name of the model. The default is None.
+            extra name of the model. The default is None.
         is_latent : boolean, optional
             defines if model is latent reconstruction or dynamics
             prediction autoencoder. The default is False.
@@ -61,12 +57,12 @@ class ModelManagementUtil:
         dataset_str : str
             dataset name.
         dim : int, optional
-            2/3 depending if the model uses 2D or 3D convolution.
+            2/3 depending on if the model uses 2D or 3D convolution.
             The default is 3.
         frames : int, optional
             number of frames the model uses. The default is 2.
         name : str, optional
-            optional extra name of the model. The default is None.
+            extra name of the model. The default is None.
         is_latent : boolean, optional
             defines if model is latent reconstruction or dynamics
             prediction autoencoder. The default is False.
@@ -91,12 +87,12 @@ class ModelManagementUtil:
         dataset_str : str
             dataset name.
         dim : int, optional
-            2/3 depending if the model uses 2D or 3D convolution.
+            2/3 depending on if the model uses 2D or 3D convolution.
             The default is 3.
         frames : int, optional
             number of frames the model uses. The default is 2.
         name : str, optional
-            optional extra name of the model. The default is None.
+            extra name of the model. The default is None.
         is_latent : boolean, optional
             defines if model is latent reconstruction or dynamics
             prediction autoencoder. The default is False.
@@ -120,12 +116,12 @@ class ModelManagementUtil:
         dataset_str : str
             dataset name.
         dim : int, optional
-            2/3 depending if the model uses 2D or 3D convolution.
+            2/3 depending on if the model uses 2D or 3D convolution.
             The default is 3.
         frames : int, optional
             number of frames the model uses. The default is 2.
         name : str, optional
-            optional extra name of the model. The default is None.
+            extra name of the model. The default is None.
         is_latent : boolean, optional
             defines if model is latent reconstruction or dynamics
             prediction autoencoder. The default is False.
@@ -147,10 +143,10 @@ class ModelManagementUtil:
         Parameters
         ----------
         dim : int, optional
-            2/3 depending if the model uses 2D or 3D convolution.
+            2/3 depending on if the model uses 2D or 3D convolution.
             The default is 3.
         name : str, optional
-            optional extra name of the model. The default is None.
+            extra name of the model. The default is None.
         is_latent : boolean, optional
             defines if model is latent reconstruction or dynamics
             prediction autoencoder. The default is False
@@ -172,10 +168,10 @@ class ModelManagementUtil:
         Parameters
         ----------
         dim : int, optional
-            2/3 depending if the model uses 2D or 3D convolution.
+            2/3 depending on if the model uses 2D or 3D convolution.
             The default is 3.
         name : str, optional
-            optional extra name of the model. The default is None.
+            extra name of the model. The default is None.
         is_latent : boolean, optional
             defines if model is latent reconstruction or dynamics
             prediction autoencoder. The default is False
@@ -197,10 +193,10 @@ class ModelManagementUtil:
         Parameters
         ----------
         dim : int, optional
-            2/3 depending if the model uses 2D or 3D convolution.
+            2/3 depending on if the model uses 2D or 3D convolution.
             The default is 3.
         name : str, optional
-            optional extra name of the model. The default is None.
+            extra name of the model. The default is None.
         is_latent : boolean, optional
             defines if model is latent reconstruction or dynamics
             prediction autoencoder. The default is False

@@ -11,8 +11,7 @@ def train_autoencoder(autoencoder, training_dataset, validation_dataset,
                       steps_per_epoch, save_path=None, patience=50, epochs=300, learning_rate=5e-4,
                       validation_steps=100, loss='MSE'):
     """
-    function for training autoencoders, which defines some defaults for
-    hyperparameters
+    function for training autoencoders, which defines some defaults for hyperparameters
 
     Parameters
     ----------

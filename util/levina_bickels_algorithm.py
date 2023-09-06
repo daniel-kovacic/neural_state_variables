@@ -8,15 +8,14 @@ def reshape_array_for_levina_bickels_alg(array, dataset_info):
                           np.prod(dataset_info.get_latent_enc_shape())))
 
 
-def levina_bickels_alg(points, neighbors_lower_bound=15,neighbors_upper_bound=25):
+def levina_bickels_alg(points, neighbors_lower_bound=15, neighbors_upper_bound=25):
     """
-    levina-Bickel's algorithm implementation.An average over different
-    choices for the number of neighbors is used. The performance effect
-    of the range for the number of neighbours is negligible.
+    Levina-Bickel's algorithm implementation. An average over different choices for the number of neighbors is used.
+    The performance effect of the range for the number of neighbours is negligible.
 
     Parameters
     ----------
-    points : numpy-array
+    points : numpy.array
         array with all points used for ID estimation
     neighbors_lower_bound : int, optional
         lower bound for number of neighbours used for estimation.

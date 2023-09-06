@@ -31,16 +31,16 @@ def __get_adjacent_frame_paths(indices, number_of_frames, dir_path):
     """
     Parameters
     ----------
-    dir_index : tf.Tensor
-        dir_index.
-    frame_index : tf.Tensor
-        index of the first frame.
+    indices : tf.Tensor
+        vid- and frame- indices.
+    number_of_frames: int
+        number adjacent frames which paths should be returned
     dir_path: str
         path to used data directory
     Returns
     -------
     list
-        returns a lsit of the path of adjacent image files
+        returns a list of the paths of adjacent image files
         at the given indices.
 
     """
@@ -69,6 +69,19 @@ def __get_normalized_images(image_paths):
 
 
 def get_data_preprocessor(dataset_info, hidden_parts=False):
+    """
+    Returns data preprocessor corresponding to dataset info object.
+    Parameters
+    ----------
+    dataset_info: DatasetInfo
+        dataset info object including DatasetSpecificInfo
+    hidden_parts: boolean
+        determines if data is split in hidden and non-hidden parts
+
+    Returns
+    -------
+
+    """
     path = str(dataset_info.get_path())
     num_of_frames = dataset_info.get_num_of_frames()
     dim = dataset_info.get_dim
@@ -81,20 +94,17 @@ def get_data_preprocessor(dataset_info, hidden_parts=False):
     if not hidden_parts:
         def __data_entry_preprocessor(indices):
             """
-            loads and preprocesses adjacent frames.
-            Appends frames vertically so that 2D-convolution can be used.
+            loads and preprocesses adjacent frames and appends them appropriately depending on dim of the dataset.
 
             Parameters
             ----------
-            dir_index : Tensor
-                directory index of the frame files.
-            file_index : Tensor
-                index of the first frame.
+            indices : Tensor
+                video and frame index of data that should be preprocessed.
 
             Returns
             -------
             x0 : tf.Tensor
-                input for 2D convolutional dynamics prediction autoencoder.
+                input for dynamics prediction autoencoder.
             x1 : tf.Tensor
                 expected output corresponding to input.
 
@@ -115,22 +125,17 @@ def get_data_preprocessor(dataset_info, hidden_parts=False):
 
         def __data_entry_preprocessor(indices):
             """
-            loads and preprocesses adjacent frames.
-            Appends frames along a new axis so that 3D-convolution can be used.
-            Uses images with hidden parts as input and full images as expected
-            output
+            loads and preprocesses adjacent frames including of a dataset, including a hidden part,
+             and appends them appropriately depending on dim of the dataset.
 
             Parameters
             ----------
-            dir_index : tf.Tensor
-                directory index of the frame files.
-            file_index : tf.Tensor
-                index of the first frame.
-
+            indices : Tensor
+                video and frame index of data that should be preprocessed.
             Returns
             -------
             x0 : tf.Tensor
-                input for 2D convolutional dynamics prediction autoencoder.
+                input for dynamics prediction autoencoder.
             x1 : tf.Tensor
                 expected output corresponding to input.
 
@@ -155,32 +160,92 @@ def get_data_preprocessor(dataset_info, hidden_parts=False):
     return __data_entry_preprocessor
 
 
-class IndexArrayMapper():
+class IndexArrayMapper:
     def __init__(self, data, dataset_info, hidden_data=None):
+        """
+
+        Parameters
+        ----------
+        data: np.array
+            data array
+        dataset_info: DatasetInfo
+            DatasetInfo object containing information about the dataset
+        hidden_data: np.array, optional
+            optional data array containing data with parts hidden which should be used as input for dynamics prediction
+            autoencoder.
+        """
         self.data = data
         self.frames_per_vid = dataset_info.frames_per_vid
         self.output_data = hidden_data if hidden_data is not None else self.data
         self.num_of_frames = dataset_info.get_num_of_frames()
 
     def index_array_mapper_3d(self, indices):
+        """
+
+        Parameters
+        ----------
+        indices: tuple-int
+            video index and frame index
+
+        Returns
+        -------
+            Frames appended on the time axis
+        """
         return (self.data[indices[0], indices[1]:indices[1] + self.num_of_frames],
                 self.output_data[indices[0], indices[1] + 1: indices[1] + self.num_of_frames + 1])
 
     def index_array_mapper_2d(self, indices):
+        """
+        Parameters
+        ----------
+        indices: tuple-int
+            video index and frame index
+
+        Returns
+        -------
+            input and expected output frames appended on the x-axis
+        """
         return (tf.concat([frame for frame in self.data[indices[0], indices[1]:indices[1] + self.num_of_frames]], 0),
                 tf.concat([frame for frame in self.output_data[indices[0], indices[1] + 1: indices[1] + self.num_of_frames + 1]], 0))
 
     def latent_array_mapper(self, indices):
+        """
+        Parameters
+        ----------
+        indices: tuple-int
+            video index and frame index
+
+        Returns
+        -------
+            input and expected output frames appended on the x-axis
+        """
         x = self.data[indices[0], indices[1]]
         return x, x
 
     def get_latent_index_array_mapper(self):
+        """
+
+        Returns
+        -------
+        function:
+            latent array mapper
+        """
         return lambda i: tf.py_function(
             func=self.latent_array_mapper,
             inp=[i],
             Tout=[tf.float32, tf.float32])
 
     def get_index_array_mapper(self, dim=3):
+        """
+
+        Parameters
+        ----------
+        dim: int, optional
+            defines in which way the frames are appended 2 (x-axis) or 3(time-axis)
+        Returns
+        -------
+
+        """
         if dim == 3:
             return lambda i: tf.py_function(
                 func=self.index_array_mapper_3d,
@@ -194,17 +259,42 @@ class IndexArrayMapper():
 
 
 def get_array_mapper(data, data_info, hidden_data=None, latent=False):
+    """
+    Get mapping from indices to data in np.array
+    Parameters
+    ----------
+    data: np.array
+        data to which should be mapped
+    data_info: DataInfo
+        information about the dataset
+    hidden_data: np.array/None, optional
+        optonal data with parts hidden, used as input
+    latent: boolean, optional
+        defines if mapping is to latent encoded data
+
+    Returns
+    -------
+        mapper from indices to data
+    """
     mapper_obj = IndexArrayMapper(data, data_info, hidden_data=hidden_data)
     return mapper_obj.get_latent_index_array_mapper() if latent else mapper_obj.get_index_array_mapper(
         dim=data_info.get_dim())
 
 
-def get_latent_array_mapper(data, frames_per_vid):
-    mapper_obj = IndexArrayMapper(data, frames_per_vid)
-    return mapper_obj.get_latent_index_array_mapper()
-
-
 def get_latent_memmap(dataset_info, filename):
+    """
+    Get mapping from indices to data in np.array
+    Parameters
+    ----------
+    dataset_info: DataInfo
+        information about the dataset
+    filename: boolean, str
+        filename to memmap file
+
+    Returns
+    -------
+        mapper from indices to memmap-data
+    """
     path = os.path.join(dataset_info.get_latent_path(), filename)
     shape = (dataset_info.number_of_vids, dataset_info.get_data_tuples_per_vid(),
              dataset_info.get_num_of_frames(), dataset_info.get_latent_enc_shape())
@@ -212,24 +302,34 @@ def get_latent_memmap(dataset_info, filename):
 
 
 def get_specific_image_preprocessor(dataset_info, hidden=False):
+    """
+
+    Parameters
+    ----------
+    dataset_info: DatasetInfo
+        Object containing information about  the dataset
+    hidden: boolean
+        determines if a dataset with parts hidden should be used
+
+    Returns
+    -------
+
+    """
     path = str(dataset_info.get_path(hidden=hidden))
 
     def __data_entry_preprocessor(indices):
         """
-        loads and preprocesses adjacent frames.
-        Appends frames vertically so that 2D-convolution can be used.
+        loads and preprocesses adjacent frames including of a dataset, including a hidden part,
+         and appends them appropriately depending on dim of the dataset.
 
         Parameters
         ----------
-        dir_index : Tensor
-            directory index of the frame files.
-        file_index : Tensor
-            index of the first frame.
-
+        indices : Tensor
+            video and frame index of data that should be preprocessed.
         Returns
         -------
         x0 : tf.Tensor
-            input for 2D convolutional dynamics prediction autoencoder.
+            input for dynamics prediction autoencoder.
         x1 : tf.Tensor
             expected output corresponding to input.
 

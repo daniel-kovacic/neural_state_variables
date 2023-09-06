@@ -14,7 +14,7 @@ import numpy as np
 def get_3d_conv_layer(filters, kernel_size=(2, 3, 3), strides=(1, 2, 2),
                       activation='relu', padding='same', **kwargs):
     """
-    creates a 3d convolutional layer with defualt parameters as needed for
+    creates a 3d convolutional layer with default parameters as needed for
     the dynamics prediction autoencoder
 
     Parameters
@@ -29,7 +29,7 @@ def get_3d_conv_layer(filters, kernel_size=(2, 3, 3), strides=(1, 2, 2),
         activation function used for the layer. The default is 'relu'.
     padding : str, optional
         The default is 'same'.
-    **kwargs : any
+    **kwargs : dict
         other kwargs that should be passed to the constructed layer.
 
     Returns
@@ -63,7 +63,7 @@ def get_3d_conv_transpose_layer(filters, kernel_size=(2, 3, 3), strides=(1, 2, 2
         activation function used for the layer. The default is 'relu'.
     padding : str, optional
         The default is 'same'.
-    **kwargs : any
+    **kwargs : dict
         other kwargs that should be passed to the constructed layer.
 
     Returns
@@ -97,7 +97,7 @@ def get_2d_conv_layer(filters, kernel_size=(4, 4), strides=(2, 2),
         activation function used for the layer. The default is 'relu'.
     padding : str, optional
         The default is 'same'.
-    **kwargs : any
+    **kwargs : dict
         other kwargs that should be passed to the constructed layer.
 
     Returns
@@ -131,7 +131,7 @@ def get_2d_conv_transpose_layer(filters, kernel_size=(4, 4), strides=(2, 2),
         activation function used for the layer. The default is 'relu'.
     padding : str, optional
         The default is 'same'.
-    **kwargs : any
+    **kwargs : dict
         other kwargs that should be passed to the constructed layer.
 
     Returns
@@ -149,7 +149,7 @@ def get_2d_conv_transpose_layer(filters, kernel_size=(4, 4), strides=(2, 2),
 
 def dynamics_autoencoder_def_3d(input_shape=(None, 128, 128, 3)):
     """
-    definiton for 3d dynamics prediction autoencoder. Similar to the
+    Definition for 3d dynamics prediction autoencoder. Similar to the
     2D version.
     Latent space reduced by a factor of 4 compared to original space.
     Unnecessarily high dimensional
@@ -198,9 +198,9 @@ def dynamics_autoencoder_def_3d(input_shape=(None, 128, 128, 3)):
 
 def dynamics_autoencoder_def_3d_updated(input_shape=(None, 128, 128, 3)):
     """
-    definiton for 3d dynamics prediction autoencoder.
+    Definition for 3d dynamics prediction autoencoder.
     Latent space reduced by a factor of 192 compared to original space.
-    capable of providing stable video predictions
+    Capable of providing stable video predictions
 
     Parameters
     ----------
@@ -250,9 +250,9 @@ def dynamics_autoencoder_def_3d_updated(input_shape=(None, 128, 128, 3)):
 
 def dynamics_autoencoder_def_3d_updated2(input_shape=(None, 128, 128, 3)):
     """
-    definition for 3d dynamics prediction autoencoder.
+    Definition for 3d dynamics prediction autoencoder.
     Latent space reduced by a factor of 384 compared to original space.
-    capable of providing stable video predictions
+    Capable of providing stable video predictions
     Architecture used for Models in Bachelor Thesis
 
     Parameters
@@ -295,54 +295,6 @@ def dynamics_autoencoder_def_3d_updated2(input_shape=(None, 128, 128, 3)):
         get_3d_conv_transpose_layer(32),
         BatchNormalization(),
         get_3d_conv_transpose_layer(3, activation="sigmoid")])
-
-    conv_autoencoder = Sequential([conv_encoder, conv_decoder])
-
-    return conv_autoencoder
-
-
-def dynamics_autoencoder_def_2d(input_shape=(None, 128, 3)):
-    """
-    definiton for 2d dynamics prediction autoencoder.
-    Latent space reduced by a factor of 2 compared to original space.
-
-    Parameters
-    ----------
-    input_shape : int tuple, optional
-        fixes input shape so that summary function of model gives more information.
-        The default is (None,None, None, 3).
-
-    Returns
-    -------
-    conv_autoencoder : tf.keras.Model
-        untrained dynamics prediction autoencoder.
-
-    """
-
-    conv_encoder = Sequential()
-
-    # Encoder
-    conv_encoder = Sequential([
-        get_2d_conv_layer(32, input_shape=input_shape),
-        BatchNormalization(),
-        get_2d_conv_layer(32),
-        BatchNormalization(),
-        get_2d_conv_layer(64),
-        BatchNormalization(),
-        get_2d_conv_layer(128),
-        BatchNormalization(),
-        get_2d_conv_layer(128, strides=(2, 1), activation="sigmoid")])
-
-    conv_decoder = Sequential([
-        get_2d_conv_transpose_layer(128, strides=(2, 1)),
-        BatchNormalization(),
-        get_2d_conv_transpose_layer(64),
-        BatchNormalization(),
-        get_2d_conv_transpose_layer(32),
-        BatchNormalization(),
-        get_2d_conv_transpose_layer(32),
-        BatchNormalization(),
-        get_2d_conv_transpose_layer(3, activation="sigmoid")])
 
     conv_autoencoder = Sequential([conv_encoder, conv_decoder])
 
@@ -431,7 +383,7 @@ def dynamics_autoencoder_def_2d_updated(input_shape=(None, 128, 3)):
 def latent_autoencoder_def(
         neural_state_dim, input_shape=(2, 1, 1, 64)):
     """
-    returns a untrained latent reconstruction autoencoder.
+    returns an untrained latent reconstruction autoencoder.
 
     Parameters
     ----------
@@ -493,15 +445,5 @@ def latent_autoencoder_def(
     ])
 
     return autoencoder
-
-
-if __name__ == "__main__":
-    """
-    autoencoder = dynamics_autoencoder_def_2d_updated(input_shape=(256, 128, 3)).autoencoder
-    autoencoder.summary()
-    autoencoder.layers[0].summary()
-    autoencoder.layers[1].summary()
-    autoencoder.save(ModelUtil.get_untrained_model_path(name="updated",dim=2))
-    """
 
 

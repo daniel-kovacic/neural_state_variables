@@ -8,15 +8,6 @@ import tensorflow as tf
 
 
 class DatasetUtil:
-    """
-    Class used for accessing video frames data in the form of
-    tf.data.Dataset. Data needs to be stored correctly and a data-info json
-    file is required for data to be accessable this way.
-
-    Methods
-    -------
-
-    """
 
     def __init__(self, dataset_info, parts_hidden=False):
         """
@@ -26,19 +17,12 @@ class DatasetUtil:
         Parameters
         ----------
         dataset_info : DatasetInfo
-            Object which holds the most important info about .
+            Object which holds the most important info about the dataset.
         parts_hidden: boolean, optional
-            Can be set to true if dataset_info contains a path to videoframes
-            where part of the system are hidden.
-            In this case the full frames are used for reconstruction the
+            If set to True the full frames are used for validation, the
             frames in which parts of the systems are hidden are used as input.
             The default is False.
-
-        Raises
         ------
-        Exception
-            raises exception if number_of_points is no integer
-
         Returns
         -------
         None.
@@ -47,9 +31,6 @@ class DatasetUtil:
 
         self.dataset_info = dataset_info
         self.parts_hidden = parts_hidden
-
-        # number of data points is calcualted as a function of frames
-        # used as input
 
     def __get_dataset_indices(self, mode):
         """
@@ -66,7 +47,7 @@ class DatasetUtil:
         Returns
         -------
         int list
-            The directory indices used in the given mode.
+            The video indices used in the given mode.
 
         """
         if mode == "train":
@@ -82,7 +63,7 @@ class DatasetUtil:
     @staticmethod
     def __random_index_generator(dataset_indices, data_tuples_per_folder):
         """
-        generates random  dir, frame index tuple from given index list
+        generates random  dir, frame index corresponding to a valid first input frame
 
         Parameters
         ----------
@@ -94,7 +75,7 @@ class DatasetUtil:
         dir_index :int
             random directory index.
         file_index : int
-            random frame index.
+            random valid first input frame index.
         """
         while True:
             size = tf.shape(dataset_indices)[0]
@@ -106,7 +87,7 @@ class DatasetUtil:
     @staticmethod
     def __sequential_index_generator(dataset_indices, data_tuples_per_folder):
         """
-        sequentialy generates dir, frame index tuple from given index list
+        sequentially generates dir and frame index, frame index corresponding to a valid first input frame
         Parameters
         ----------
         dataset_indices : int list
@@ -117,7 +98,7 @@ class DatasetUtil:
         dir_index :int
             sequential directory index.
         file_index : int
-            sequential frame index.
+            sequential valid first input frame index.
         """
 
         for dir_index in dataset_indices:
@@ -135,7 +116,8 @@ class DatasetUtil:
         sequential : boolean, optional
             defines if returned dataset goes through data sequentially
             or randomly. The default is False.
-
+        data_tuples_per_vid: int
+            number of data tuples per video
         batch_size : int, optional
             The default is 32.
         index_mapper: function
