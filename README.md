@@ -4,8 +4,7 @@
     of physical system to minimal full representations(state variables). The framework utilized to achieve this was
     first introduced in a <a href="https://arxiv.org/pdf/2112.10755.pdf"> preprint paper</a> from 2021.
     The codebase with the authors implementation of this framework is available on
-    <a href="https://github.com/BoyuanChen/neural-state-variables"> github </a>
-    https://github.com/BoyuanChen/neural-state-variables. Their ideas were adapted to support more broad use cases
+    <a href="https://github.com/BoyuanChen/neural-state-variables"> github </a>. Their ideas were adapted to support more broad use cases
     including hiding elements in the input data and using any number of input frames.
  </p>
 </div>

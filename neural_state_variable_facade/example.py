@@ -3,7 +3,7 @@ from facade import *
 if __name__ == "__main__":
     # create dataset_info which includes most information about the dataset and used model.
     # Here 2d/3d convolution and the number of frames can be selected.
-    dataset_info = create_dataset_info("double_pendulum", 60, 100, dim=3, num_of_frames=2)
+    dataset_info = create_dataset_info("double_pendulum", 60, 1100, dim=3, num_of_frames=2)
 
     # loads the corresponding untrained dynamics prediction autoencoder depending on the chosen value of dim
     dyn_pred_autoencoder = load_untrained_dynamics_prediction_autoencoder(dataset_info)
@@ -13,21 +13,22 @@ if __name__ == "__main__":
     # shape=(number_of_vids, frames_per_vid, 128, 128, 3)
     # It is not possible to use videos with different number of frames
     # The data in this case should be stored as at ./memmap_data/{dataset_name}
-    data = get_memmap_data(dataset_info.get_memmap_path(), dataset_info)
+    # data = get_memmap_data(dataset_info.get_memmap_path(), dataset_info)
     # loads optional hidden data from
     # The data in this case should be stored as at ./memmap_data/{dataset_name}_hidden
     # hidden_data = get_memmap_data(dataset_info.get_memmap_path(hidden=True), dataset_info)
 
+    dataset_generator = get_dataset_generator(dataset_info)
+
     # use the data and optionally the hidden data arrays to create tf.dataset objects. Alternatively .png images can be
     # used if they are saved in the required form.
-    dataset_generator = get_dataset_generator(dataset_info, data_array=data)
-    # , hidden_data_array=hidden_data, has_hidden_parts=True)
+    # dataset_generator = get_dataset_generator(dataset_info, data_array=data)
+    # hidden_data_array=hidden_data, has_hidden_parts=True)
     train_dataset = dataset_generator(mode="train")
     val_dataset = dataset_generator(mode="val")
     full_dataset = dataset_generator(mode="all", sequential=True, one_vid_per_batch=True)
 
-    # alternatively png-data can be used if stored as specified in the README:
-    # dataset_generator = et_dataset_generator(dataset_info, data_array=data)
+
 
     # the dynamic prediction autoencoder is trained and the results visualized, optionally a save path can be provided
     # to save the training progress between epochs.
@@ -66,3 +67,4 @@ if __name__ == "__main__":
 
     # create longterm prediction and store them as frames and videos
     make_longterm_prediction(dataset_info, dyn_pred_autoencoder, latent_rec_autoencoder=latent_rec_autoencoder)
+
